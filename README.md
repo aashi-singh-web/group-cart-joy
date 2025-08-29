@@ -34,3 +34,9 @@ This add-on enables **group shopping, real-time chat, reactions, voting, and sha
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/yourusername/social-shopping-addon.git
+
+cd group-cart-joy
+
+npm install
+
+npm run dev
