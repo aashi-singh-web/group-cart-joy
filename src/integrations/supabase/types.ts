@@ -14,7 +14,375 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      brand_channels: {
+        Row: {
+          brand_name: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      cart_items: {
+        Row: {
+          added_by: string | null
+          cart_id: string | null
+          created_at: string | null
+          id: string
+          product_id: string | null
+          quantity: number | null
+        }
+        Insert: {
+          added_by?: string | null
+          cart_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          added_by?: string | null
+          cart_id?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_cart_id_fkey"
+            columns: ["cart_id"]
+            isOneToOne: false
+            referencedRelation: "carts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carts: {
+        Row: {
+          channel_id: string | null
+          created_at: string | null
+          id: string
+          room_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carts_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "brand_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carts_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_members: {
+        Row: {
+          channel_id: string | null
+          id: string
+          joined_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          id?: string
+          joined_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "brand_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          channel_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          room_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          channel_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          channel_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          room_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "brand_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_image: string | null
+          product_name: string | null
+          product_price: number | null
+          product_url: string
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_image?: string | null
+          product_name?: string | null
+          product_price?: number | null
+          product_url: string
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_image?: string | null
+          product_name?: string | null
+          product_price?: number | null
+          product_url?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      room_members: {
+        Row: {
+          id: string
+          joined_at: string | null
+          room_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          room_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          room_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "room_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_private: boolean | null
+          room_code: string | null
+          room_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_private?: boolean | null
+          room_code?: string | null
+          room_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_private?: boolean | null
+          room_code?: string | null
+          room_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          channel_id: string | null
+          created_at: string | null
+          emoji: string | null
+          id: string
+          product_id: string | null
+          room_id: string | null
+          user_id: string | null
+          vote_type: string
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          product_id?: string | null
+          room_id?: string | null
+          user_id?: string | null
+          vote_type: string
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          product_id?: string | null
+          room_id?: string | null
+          user_id?: string | null
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "brand_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

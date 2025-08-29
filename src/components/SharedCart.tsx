@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,122 +8,160 @@ import {
   Plus, 
   Minus,
   Users,
-  Crown,
   ExternalLink
 } from "lucide-react";
-import { ProductCard } from "./ProductCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useUser } from "@/hooks/useUser";
 
 interface CartItem {
   id: string;
   product: {
     id: string;
-    name: string;
-    brand: string;
-    price: string;
-    image: string;
-    rating: number;
-    reviews: number;
-    category: string;
+    product_name: string;
+    product_image: string;
+    product_price: number;
+    product_url: string;
+    source: string;
   };
   quantity: number;
-  addedBy: {
-    name: string;
-    avatar: string;
-  };
-  votes: {
-    up: number;
-    down: number;
-    users: string[];
+  added_by_user?: {
+    display_name?: string;
   };
 }
-
-const sampleCartItems: CartItem[] = [
-  {
-    id: "1",
-    product: {
-      id: "p1",
-      name: "Oversized Wool Blazer",
-      brand: "Zara",
-      price: "₹4,999",
-      image: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400",
-      rating: 4.5,
-      reviews: 128,
-      category: "Outerwear"
-    },
-    quantity: 1,
-    addedBy: { name: "Sarah", avatar: "👩" },
-    votes: { up: 3, down: 0, users: ["Mike", "Alex", "Emma"] }
-  },
-  {
-    id: "2",
-    product: {
-      id: "p2",
-      name: "Classic White Sneakers",
-      brand: "Nike",
-      price: "₹7,299",
-      image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400",
-      rating: 4.8,
-      reviews: 256,
-      category: "Footwear"
-    },
-    quantity: 2,
-    addedBy: { name: "Mike", avatar: "👨" },
-    votes: { up: 2, down: 1, users: ["Sarah", "Alex"] }
-  }
-];
 
 interface SharedCartProps {
   roomId?: string;
-  isPublic?: boolean;
+  channelId?: string;
 }
 
-export const SharedCart = ({ roomId, isPublic = false }: SharedCartProps) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(sampleCartItems);
-  const [view, setView] = useState<'grid' | 'list'>('list');
+export const SharedCart = ({ roomId, channelId }: SharedCartProps) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartId, setCartId] = useState<string | null>(null);
+  const [totalValue, setTotalValue] = useState(0);
+  const { user } = useUser();
 
-  const totalValue = cartItems.reduce((sum, item) => {
-    const price = parseInt(item.product.price.replace(/[₹,]/g, ''));
-    return sum + (price * item.quantity);
-  }, 0);
+  const isPublic = !!channelId;
+
+  useEffect(() => {
+    if (roomId || channelId) {
+      fetchCart();
+    }
+  }, [roomId, channelId, user]);
+
+  const fetchCart = async () => {
+    try {
+      // Get cart for room or channel
+      const { data: cartData, error: cartError } = await supabase
+        .from('carts')
+        .select('id')
+        .eq(roomId ? 'room_id' : 'channel_id', roomId || channelId)
+        .single();
+
+      if (cartError && cartError.code !== 'PGRST116') throw cartError;
+
+      if (!cartData) {
+        // Create cart if it doesn't exist
+        const { data: newCart, error: createError } = await supabase
+          .from('carts')
+          .insert(roomId ? { room_id: roomId } : { channel_id: channelId })
+          .select('id')
+          .single();
+
+        if (createError) throw createError;
+        setCartId(newCart.id);
+        return;
+      }
+
+      setCartId(cartData.id);
+
+      // Fetch cart items with products and user info
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('cart_items')
+        .select(`
+          id,
+          quantity,
+          products (
+            id,
+            product_name,
+            product_image,
+            product_price,
+            product_url,
+            source
+          ),
+          users (
+            display_name
+          )
+        `)
+        .eq('cart_id', cartData.id);
+
+      if (itemsError) throw itemsError;
+
+      const formattedItems = itemsData?.map(item => ({
+        id: item.id,
+        product: item.products,
+        quantity: item.quantity,
+        added_by_user: item.users
+      })) || [];
+
+      setCartItems(formattedItems);
+      
+      // Calculate total
+      const total = formattedItems.reduce((sum, item) => 
+        sum + (item.product.product_price * item.quantity), 0
+      );
+      setTotalValue(total);
+
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+    }
+  };
+
+  const updateQuantity = async (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      await removeItem(itemId);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .update({ quantity: newQuantity })
+        .eq('id', itemId);
+
+      if (error) throw error;
+      fetchCart();
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
+  };
+
+  const removeItem = async (itemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+      fetchCart();
+    } catch (error) {
+      console.error('Error removing item:', error);
+    }
+  };
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const getMostVotedItems = () => {
-    return cartItems
-      .sort((a, b) => (b.votes.up - b.votes.down) - (a.votes.up - a.votes.down))
-      .slice(0, 3);
-  };
-
-  const handleVote = (itemId: string, type: 'up' | 'down') => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        return {
-          ...item,
-          votes: {
-            ...item.votes,
-            [type]: item.votes[type] + 1
-          }
-        };
-      }
-      return item;
-    }));
-  };
-
-  const handleQuantityChange = (itemId: string, delta: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        const newQuantity = Math.max(0, item.quantity + delta);
-        return newQuantity === 0 
-          ? null 
-          : { ...item, quantity: newQuantity };
-      }
-      return item;
-    }).filter(Boolean) as CartItem[]);
-  };
-
-  const handleRemoveItem = (itemId: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== itemId));
-  };
+  if (!cartId || cartItems.length === 0) {
+    return (
+      <Card className="p-6 text-center">
+        <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-semibold mb-2">Cart is Empty</h3>
+        <p className="text-muted-foreground">
+          Start adding products to see them here!
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -159,186 +197,80 @@ export const SharedCart = ({ roomId, isPublic = false }: SharedCartProps) => {
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {isPublic ? "Community" : "4 contributors"}
+                {isPublic ? "Community" : "Shopping together"}
               </span>
             </div>
-            <Badge variant="outline" className="flex items-center">
-              <Crown className="w-3 h-3 mr-1" />
-              Top Voted
-            </Badge>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant={view === 'list' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('list')}
-            >
-              List
-            </Button>
-            <Button
-              variant={view === 'grid' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setView('grid')}
-            >
-              Grid
-            </Button>
           </div>
         </div>
       </Card>
-
-      {/* Top Voted Items */}
-      {!isPublic && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">🔥 Most Voted Items</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {getMostVotedItems().map((item, index) => (
-              <div key={item.id} className="relative">
-                {index === 0 && (
-                  <Badge className="absolute -top-2 -right-2 z-10 bg-fire text-white">
-                    #1
-                  </Badge>
-                )}
-                <ProductCard 
-                  product={item.product}
-                  compact
-                  reactions={{
-                    likes: item.votes.up,
-                    hearts: 0,
-                    fire: 0,
-                    comments: 0
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Cart Items */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Cart Items</h3>
         
-        {view === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cartItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden hover:shadow-card transition-all duration-200">
+        <div className="space-y-3">
+          {cartItems.map((item) => (
+            <Card key={item.id} className="p-4 hover:shadow-card transition-all duration-200">
+              <div className="flex items-center space-x-4">
                 <img 
-                  src={item.product.image} 
-                  alt={item.product.name}
-                  className="w-full h-32 object-cover"
+                  src={item.product.product_image || '/placeholder.svg'} 
+                  alt={item.product.product_name}
+                  className="w-16 h-16 object-cover rounded-md"
                 />
-                <div className="p-4 space-y-3">
-                  <div>
-                    <h4 className="font-medium">{item.product.name}</h4>
-                    <p className="text-sm text-muted-foreground">{item.product.brand}</p>
-                    <p className="font-semibold text-primary">{item.product.price}</p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuantityChange(item.id, -1)}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuantityChange(item.id, 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {cartItems.map((item) => (
-              <Card key={item.id} className="p-4 hover:shadow-card transition-all duration-200">
-                <div className="flex items-center space-x-4">
-                  <img 
-                    src={item.product.image} 
-                    alt={item.product.name}
-                    className="w-16 h-16 object-cover rounded-md"
-                  />
-                  
-                  <div className="flex-1 space-y-1">
-                    <h4 className="font-medium">{item.product.name}</h4>
-                    <p className="text-sm text-muted-foreground">{item.product.brand}</p>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-primary">{item.product.price}</span>
+                
+                <div className="flex-1 space-y-1">
+                  <h4 className="font-medium">{item.product.product_name}</h4>
+                  <p className="text-sm text-muted-foreground">{item.product.source}</p>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold text-primary">₹{item.product.product_price}</span>
+                    {item.added_by_user?.display_name && (
                       <span className="text-xs text-muted-foreground">
-                        Added by {item.addedBy.avatar} {item.addedBy.name}
+                        Added by {item.added_by_user.display_name}
                       </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    {/* Voting */}
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        size="reaction"
-                        variant="outline"
-                        onClick={() => handleVote(item.id, 'up')}
-                        className="text-xs"
-                      >
-                        👍 {item.votes.up}
-                      </Button>
-                      <Button
-                        size="reaction"
-                        variant="outline"
-                        onClick={() => handleVote(item.id, 'down')}
-                        className="text-xs"
-                      >
-                        👎 {item.votes.down}
-                      </Button>
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuantityChange(item.id, -1)}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleQuantityChange(item.id, 1)}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveItem(item.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    )}
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
+
+                <div className="flex items-center space-x-3">
+                  {/* Quantity */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="w-8 text-center font-medium">{item.quantity}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => window.open(item.product.product_url, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Checkout Button */}
@@ -356,7 +288,7 @@ export const SharedCart = ({ roomId, isPublic = false }: SharedCartProps) => {
             className="font-semibold"
           >
             <ExternalLink className="w-5 h-5 mr-2" />
-            Checkout on Myntra
+            Checkout
           </Button>
         </div>
       </Card>

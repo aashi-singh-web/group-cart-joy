@@ -111,7 +111,7 @@ const Index = () => {
             </div>
             <div className="space-y-6">
               <ChatInterface />
-              <SharedCart isPublic />
+              <SharedCart channelId={selectedChannel} />
             </div>
           </div>
         </div>
