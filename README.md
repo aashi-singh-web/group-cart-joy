@@ -31,7 +31,7 @@ This add-on enables **group shopping, real-time chat, reactions, voting, and sha
 
 ## 🚀 Getting Started
 
-### 1. Clone the repository
+### To Start
 ```bash
 git clone https://github.com/yourusername/social-shopping-addon.git
 
