@@ -1,73 +1,39 @@
-# Welcome to your Lovable project
+🛍️ Social Shopping Add-on
 
-## Project info
+A collaborative shopping experience layer built on top of e-commerce platforms like Myntra.
+This add-on enables group shopping, real-time chat, reactions, voting, and shared carts — all without requiring login/signup.
 
-**URL**: https://lovable.dev/projects/e7ca7104-582b-4a4a-a79e-f2151c24b417
+✨ Features
+🔓 Public Brand Channels
 
-## How can I edit this code?
+Join channels like Zara, H&M, Nike.
 
-There are several ways of editing your application.
+See new product drops in real time.
 
-**Use Lovable**
+React with 👍/👎 or emoji.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e7ca7104-582b-4a4a-a79e-f2151c24b417) and start prompting.
+Add items to a shared brand cart.
 
-Changes made via Lovable will be committed automatically to this repo.
+🔒 Private Shopping Rooms
 
-**Use your preferred IDE**
+Create private rooms with friends (via invite link).
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Browse together and chat in real time.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Share product links/outfits from Myntra.
 
-Follow these steps:
+Vote and react on items.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Build a shared cart for collective purchases.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+🌟 Core Across Rooms/Channels
 
-# Step 3: Install the necessary dependencies.
-npm i
+Realtime chat + emoji reactions.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Voting system on products.
 
-**Edit a file directly in GitHub**
+Group wishlist (most voted items highlighted).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Shared cart with live total value.
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/e7ca7104-582b-4a4a-a79e-f2151c24b417) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Synchronized product feed for everyone.
