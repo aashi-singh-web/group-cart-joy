@@ -29,26 +29,6 @@ This add-on enables **group shopping, real-time chat, reactions, voting, and sha
 
 ---
 
-## 🗄️ Database Schema (Supabase)
-
-The project uses **Supabase (Postgres)** for backend.  
-
-### Tables
-- **users** → Anonymous users (session-based).  
-- **brand_channels** → Public brand-specific channels.  
-- **channel_members** → Users inside brand channels.  
-- **rooms** → Private rooms created by users.  
-- **room_members** → Users inside private rooms.  
-- **products** → Products shared inside rooms/channels.  
-- **votes** → Reactions & votes on products.  
-- **messages** → Real-time chat messages.  
-- **carts** → Shared cart for each room/channel.  
-- **cart_items** → Products inside shared carts.  
-
-👉 Full SQL schema: [schema.sql](./schema.sql)  
-
----
-
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
